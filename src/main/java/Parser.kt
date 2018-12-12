@@ -110,6 +110,7 @@ class Parser {
         when (curr.tokenType) {
             Lexer.TokenType.IDENTIFIER -> return parseIdentifier()
             Lexer.TokenType.NUMBER -> return parseNumber()
+            Lexer.TokenType.IF -> return parseIfExpr()
             Lexer.TokenType.OTHER -> {
                 if (curr.text == "(") return parseParen()
                 throw Exception("expect a primary, got " + curr.text)
@@ -205,5 +206,21 @@ class Parser {
 
         progress++
         return parsePrototype()
+    }
+
+    private fun parseIfExpr(): BaseAST {
+        progress++;
+        val condition = parseExpression()
+        if (tokens[progress].tokenType != Lexer.TokenType.THEN) {
+            throw Exception("expect then, got " + tokens[progress].text)
+        }
+        progress++
+        val positive = parseExpression()
+        if (tokens[progress].tokenType != Lexer.TokenType.ELSE) {
+            throw Exception("expect else, got " + tokens[progress].text)
+        }
+        progress++
+        val negative = parseExpression()
+        return IfExpressionAST(condition, positive, negative)
     }
 }

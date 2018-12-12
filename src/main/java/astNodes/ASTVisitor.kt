@@ -14,4 +14,6 @@ open class ASTVisitor {
     open fun visit(ast: NumberAST) {}
 
     open fun visit(ast: VariableAST) {}
+
+    open fun visit(ast: IfExpressionAST) {}
 }

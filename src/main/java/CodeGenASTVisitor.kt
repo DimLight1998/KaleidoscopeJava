@@ -92,4 +92,45 @@ class CodeGenASTVisitor : ASTVisitor() {
     override fun visit(ast: VariableAST) {
         valueRefStack.push(namedValues[ast.variableName])
     }
+
+    override fun visit(ast: IfExpressionAST) {
+        ast.condition.accept(this)
+        var condition = valueRefStack.pop()
+        val zero = LLVMConstReal(LLVMDoubleType(), 0.0)
+        condition = LLVMBuildFCmp(builder, LLVMRealONE, condition, zero, "ifcond")
+        val function = LLVMGetBasicBlockParent(LLVMGetInsertBlock(builder))
+
+        var positiveBB = LLVMAppendBasicBlock(function, "then")
+        var negativeBB = LLVMAppendBasicBlock(function, "else")
+        val mergeBB = LLVMAppendBasicBlock(function, "ifcont")
+        LLVMBuildCondBr(builder, condition, positiveBB, negativeBB)
+
+        LLVMPositionBuilderAtEnd(builder, positiveBB)
+        ast.positive.accept(this)
+        val positive = valueRefStack.pop()
+        LLVMBuildBr(builder, mergeBB)
+        positiveBB = LLVMGetInsertBlock(builder)
+
+        LLVMPositionBuilderAtEnd(builder, negativeBB)
+        ast.negative.accept(this)
+        val negative = valueRefStack.pop()
+        LLVMBuildBr(builder, mergeBB)
+        negativeBB = LLVMGetInsertBlock(builder)
+
+        LLVMPositionBuilderAtEnd(builder, mergeBB)
+        val phi = LLVMBuildPhi(builder, LLVMDoubleType(), "if_tmp")
+        LLVMAddIncoming(
+                phi,
+                PointerPointer(*Array<LLVMValueRef>(1) { positive }),
+                PointerPointer(*Array<LLVMBasicBlockRef>(1) { positiveBB }),
+                1
+        )
+        LLVMAddIncoming(
+                phi,
+                PointerPointer(*Array<LLVMValueRef>(1) { negative }),
+                PointerPointer(*Array<LLVMBasicBlockRef>(1) { negativeBB }),
+                1
+        )
+        valueRefStack.push(phi)
+    }
 }

@@ -6,14 +6,19 @@ class Lexer(preserveComments: Boolean) {
     private var preserveComments = false
 
     enum class TokenType {
-        EOF, DEF, EXTERN, IDENTIFIER, COMMENT, NUMBER, SEMICOLON, OTHER
+        EOF, DEF, EXTERN, IDENTIFIER, COMMENT, NUMBER, SEMICOLON, OTHER,
+        IF, THEN, ELSE
     }
 
     init {
         // initialize keywords
-        this.keywords = HashMap()
-        this.keywords["def"] = TokenType.DEF
-        this.keywords["extern"] = TokenType.EXTERN
+        this.keywords = hashMapOf(
+                "def" to TokenType.DEF,
+                "extern" to TokenType.EXTERN,
+                "if" to TokenType.IF,
+                "then" to TokenType.THEN,
+                "else" to TokenType.ELSE
+        )
         this.preserveComments = preserveComments
     }
 
