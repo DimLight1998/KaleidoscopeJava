@@ -13,7 +13,7 @@ class CodeGenASTVisitor : ASTVisitor() {
     private val builder = LLVMCreateBuilder()
 
     override fun visit(ast: BaseAST) {
-
+        throw Exception("this method should not be called")
     }
 
     fun dump() {
@@ -21,8 +21,10 @@ class CodeGenASTVisitor : ASTVisitor() {
     }
 
     override fun visit(ast: BinaryExpressionAST) {
-        val right = valueRefStack.pop()
+        ast.left!!.accept(this)
         val left = valueRefStack.pop()
+        ast.right!!.accept(this)
+        val right = valueRefStack.pop()
         val pushing: LLVMValueRef?
         pushing = when (ast.operation) {
             '+' -> LLVMBuildFAdd(builder, left, right, "addtmp")
@@ -54,6 +56,7 @@ class CodeGenASTVisitor : ASTVisitor() {
 
         val args = arrayOfNulls<LLVMValueRef>(Math.max(1, ast.params!!.size))
         for (i in 0 until ast.params!!.size) {
+            ast.params!![i].accept(this)
             val value = valueRefStack.pop()
             args[i] = value
         }
@@ -63,10 +66,11 @@ class CodeGenASTVisitor : ASTVisitor() {
 
     override fun visit(ast: FunctionDefinitionAST) {
         // this is a prototype
-        val body = valueRefStack.pop()
+        ast.prototype!!.accept(this)
         val prototype = valueRefStack.pop()
-
         LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(prototype, "entry"))
+        ast.body!!.accept(this)
+        val body = valueRefStack.pop()
         LLVMBuildRet(builder, body)
         LLVMVerifyFunction(prototype, LLVMPrintMessageAction)
         valueRefStack.push(prototype)
