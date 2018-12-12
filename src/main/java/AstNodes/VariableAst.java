@@ -14,4 +14,9 @@ public class VariableAst extends BaseAst {
     public void setVariableName(String variableName) {
         this.variableName = variableName;
     }
+
+    @Override
+    public void accept(AstVisitor visitor) {
+        visitor.visit(this);
+    }
 }

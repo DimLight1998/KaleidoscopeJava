@@ -14,4 +14,9 @@ public class NumberAst  extends BaseAst{
     public NumberAst(double value) {
         this.value = value;
     }
+
+    @Override
+    public void accept(AstVisitor visitor) {
+        visitor.visit(this);
+    }
 }

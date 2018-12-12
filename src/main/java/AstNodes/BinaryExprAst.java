@@ -1,6 +1,6 @@
 package AstNodes;
 
-public class BinaryExprAst extends BaseAst{
+public class BinaryExprAst extends BaseAst {
     private BaseAst left;
     private BaseAst right;
     private char operation;
@@ -33,5 +33,12 @@ public class BinaryExprAst extends BaseAst{
 
     public void setOperation(char operation) {
         this.operation = operation;
+    }
+
+    @Override
+    public void accept(AstVisitor visitor) {
+        left.accept(visitor);
+        right.accept(visitor);
+        visitor.visit(this);
     }
 }

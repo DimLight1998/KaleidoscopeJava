@@ -26,4 +26,9 @@ public class FunctionProtoAst extends BaseAst {
     public void setParams(List<String> params) {
         this.params = params;
     }
+
+    @Override
+    public void accept(AstVisitor visitor) {
+        visitor.visit(this);
+    }
 }

@@ -15,8 +15,12 @@ public class Main {
         try {
             String content = new String(Files.readAllBytes(Paths.get("misc/test.k")), StandardCharsets.US_ASCII);
             List<Lexer.Token> list = lexer.GetTokens(content);
-            List<BaseAst> ret = parser.parse(list);
-            System.out.println(ret);
+            List<BaseAst> rets = parser.parse(list);
+            CodeGenAstVisitor visitor = new CodeGenAstVisitor();
+            for (BaseAst ret : rets) {
+                ret.accept(visitor);
+            }
+            visitor.Dump();
         } catch (IOException e) {
             System.err.println("IO exception!");
         }

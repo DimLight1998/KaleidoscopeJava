@@ -24,4 +24,11 @@ public class FunctionDefAst extends BaseAst {
     public void setBody(BaseAst body) {
         this.body = body;
     }
+
+    @Override
+    public void accept(AstVisitor visitor) {
+        prototype.accept(visitor);
+        body.accept(visitor);
+        visitor.visit(this);
+    }
 }
