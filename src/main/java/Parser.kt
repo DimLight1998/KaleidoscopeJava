@@ -6,7 +6,7 @@ import java.util.HashMap
 class Parser {
     private val binOpPrecedence: MutableMap<Char, Int> = HashMap()
     private var progress = 0
-    private var tokens: List<Lexer.Token>? = null
+    private lateinit var tokens: List<Lexer.Token>;
 
     private fun getPrecedence(op: Char): Int {
         val ret = binOpPrecedence.getOrDefault(op, -1)
@@ -29,31 +29,30 @@ class Parser {
         while (progress < tokens.size) {
             when (tokens[progress].tokenType) {
                 Lexer.TokenType.EOF -> return ret
-                Lexer.TokenType.DEF -> ret.add(parseFunctionDef()!!)
-                Lexer.TokenType.EXTERN -> ret.add(parseExtern()!!)
+                Lexer.TokenType.DEF -> ret.add(parseFunctionDef())
+                Lexer.TokenType.EXTERN -> ret.add(parseExtern())
                 Lexer.TokenType.SEMICOLON -> progress++
-                else -> ret.add(parseTopLevelExpr()!!)
+                else -> ret.add(parseTopLevelExpr())
             }
         }
         System.err.println("WARN: no EOF")
         return ret
     }
 
-    private fun parseNumber(): BaseAST? {
-        val curr = tokens!![progress]
+    private fun parseNumber(): BaseAST {
+        val curr = tokens[progress]
         return if (curr.tokenType == Lexer.TokenType.NUMBER) {
             val value = java.lang.Double.valueOf(curr.text)
             val ret = NumberAST(value)
             progress++
             ret
         } else {
-            System.err.println("expect number, got " + curr.text)
-            null
+            throw Exception("expect number, got " + curr.text)
         }
     }
 
-    private fun parseParen(): BaseAST? {
-        var curr: Lexer.Token = tokens!![progress]
+    private fun parseParen(): BaseAST {
+        var curr: Lexer.Token = tokens[progress]
         if (!(curr.tokenType == Lexer.TokenType.OTHER && curr.text == "(")) {
             System.err.println("expect '(', got " + curr.text)
         }
@@ -61,7 +60,7 @@ class Parser {
 
         val ret = parseExpression()
 
-        curr = tokens!![progress]
+        curr = tokens[progress]
         if (!(curr.tokenType == Lexer.TokenType.OTHER && curr.text == ")")) {
             System.err.println("expect ')', got " + curr.text)
         }
@@ -69,32 +68,30 @@ class Parser {
         return ret
     }
 
-    private fun parseIdentifier(): BaseAST? {
-        val curr = tokens!![progress]
+    private fun parseIdentifier(): BaseAST {
+        val curr = tokens[progress]
         if (curr.tokenType != Lexer.TokenType.IDENTIFIER) {
-            System.err.println("expect an identifier, got " + curr.text)
-            return null
+            throw Exception("expect an identifier, got " + curr.text)
         }
 
         // peek next token
-        if (progress < tokens!!.size - 1) {
-            val peek = tokens!![progress + 1]
+        if (progress < tokens.size - 1) {
+            val peek = tokens[progress + 1]
             if (peek.tokenType == Lexer.TokenType.OTHER && peek.text == "(") {
                 // should be a function call
                 progress += 2
                 val args = ArrayList<BaseAST>()
                 while (true) {
                     val arg = parseExpression()
-                    args.add(arg!!)
+                    args.add(arg)
 
-                    if (tokens!![progress].tokenType == Lexer.TokenType.OTHER && tokens!![progress].text == ")") {
+                    if (tokens[progress].tokenType == Lexer.TokenType.OTHER && tokens[progress].text == ")") {
                         progress++
                         return FunctionCallAST(curr.text, args)
                     }
 
-                    if (tokens!![progress].tokenType != Lexer.TokenType.OTHER || tokens!![progress].text != ",") {
-                        System.err.println("expect ')' or ',', got " + curr.text)
-                        return null
+                    if (tokens[progress].tokenType != Lexer.TokenType.OTHER || tokens[progress].text != ",") {
+                        throw Exception("expect ')' or ',', got " + curr.text)
                     }
 
                     // is a ','
@@ -108,30 +105,27 @@ class Parser {
         return VariableAST(curr.text)
     }
 
-    private fun parsePrimary(): BaseAST? {
-        val curr = tokens!![progress]
+    private fun parsePrimary(): BaseAST {
+        val curr = tokens[progress]
         when (curr.tokenType) {
             Lexer.TokenType.IDENTIFIER -> return parseIdentifier()
             Lexer.TokenType.NUMBER -> return parseNumber()
             Lexer.TokenType.OTHER -> {
                 if (curr.text == "(") return parseParen()
-                System.err.println("expect a primary, got " + curr.text)
-                return null
+                throw Exception("expect a primary, got " + curr.text)
             }
-            // fall!
             else -> {
-                System.err.println("expect a primary, got " + curr.text)
-                return null
+                throw Exception("expect a primary, got " + curr.text)
             }
         }
     }
 
-    private fun parseBinOpRhs(minPrecedence: Int, lhs: BaseAST): BaseAST? {
+    private fun parseBinOpRhs(minPrecedence: Int, lhs: BaseAST): BaseAST {
         var lhs1 = lhs
         while (true) {
             // end of token stream, return lhs
-            if (progress == tokens!!.size) return lhs1
-            var curr: Lexer.Token = tokens!![progress]
+            if (progress == tokens.size) return lhs1
+            var curr: Lexer.Token = tokens[progress]
             if (curr.tokenType != Lexer.TokenType.OTHER) return lhs1
 
             // now this is a operator (should be)
@@ -139,48 +133,46 @@ class Parser {
             val precedence = getPrecedence(operation)
             if (precedence < minPrecedence) return lhs1
             progress++
-            var rhs: BaseAST? = parsePrimary() ?: return null
-            curr = tokens!![progress]
+            var rhs = parsePrimary()
+            curr = tokens[progress]
             val nextOperation = curr.text[0]
             val nextPrecedence = getPrecedence(nextOperation)
             if (precedence < nextPrecedence) {
-                rhs = parseBinOpRhs(precedence + 1, rhs!!)
-                if (rhs == null) return null
+                rhs = parseBinOpRhs(precedence + 1, rhs)
             }
 
             lhs1 = BinaryExpressionAST(lhs1, rhs, operation)
         }
     }
 
-    private fun parseExpression(): BaseAST? {
-        val lhs = parsePrimary() ?: return null
+    private fun parseExpression(): BaseAST {
+        val lhs = parsePrimary()
         return parseBinOpRhs(0, lhs)
     }
 
-    private fun parsePrototype(): BaseAST? {
-        var curr: Lexer.Token = tokens!![progress]
+    private fun parsePrototype(): BaseAST {
+        var curr: Lexer.Token = tokens[progress]
         if (curr.tokenType != Lexer.TokenType.IDENTIFIER) {
-            System.err.println("expect an identifier, got " + curr.text)
-            return null
+            throw Exception("expect an identifier, got " + curr.text)
         }
 
         val functionName = curr.text
         progress++
-        curr = tokens!![progress]
+        curr = tokens[progress]
         if (!(curr.tokenType == Lexer.TokenType.OTHER && curr.text == "(")) {
             System.err.println("expect '(', got " + curr.text)
         }
         progress++
         val args = ArrayList<String>()
         while (true) {
-            val arg = tokens!![progress]
+            val arg = tokens[progress]
             if (arg.tokenType != Lexer.TokenType.IDENTIFIER) {
                 break
             }
             args.add(arg.text)
             progress++
         }
-        curr = tokens!![progress]
+        curr = tokens[progress]
         if (!(curr.tokenType == Lexer.TokenType.OTHER && curr.text == ")")) {
             System.err.println("expect ')', got " + curr.text)
         }
@@ -188,29 +180,27 @@ class Parser {
         return FunctionPrototypeAST(functionName, args)
     }
 
-    private fun parseFunctionDef(): BaseAST? {
-        val curr = tokens!![progress]
+    private fun parseFunctionDef(): BaseAST {
+        val curr = tokens[progress]
         if (curr.tokenType != Lexer.TokenType.DEF) {
-            System.err.println("expect DEF, got " + curr.text)
-            return null
+            throw Exception("expect DEF, got " + curr.text)
         }
         progress++
-        val prototype = parsePrototype() ?: return null
-        val expr = parseExpression() ?: return null
+        val prototype = parsePrototype()
+        val expr = parseExpression()
         return FunctionDefinitionAST(prototype as FunctionPrototypeAST, expr)
     }
 
-    private fun parseTopLevelExpr(): BaseAST? {
-        val expr = parseExpression() ?: return null
+    private fun parseTopLevelExpr(): BaseAST {
+        val expr = parseExpression()
         val prototype = FunctionPrototypeAST("__anonymous__", ArrayList())
         return FunctionDefinitionAST(prototype, expr)
     }
 
-    private fun parseExtern(): BaseAST? {
-        val curr = tokens!![progress]
+    private fun parseExtern(): BaseAST {
+        val curr = tokens[progress]
         if (curr.tokenType != Lexer.TokenType.EXTERN) {
-            System.err.println("expect EXTERN, got " + curr.text)
-            return null
+            throw Exception("expect EXTERN, got " + curr.text)
         }
 
         progress++

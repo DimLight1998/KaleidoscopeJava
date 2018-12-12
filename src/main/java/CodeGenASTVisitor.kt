@@ -21,12 +21,11 @@ class CodeGenASTVisitor : ASTVisitor() {
     }
 
     override fun visit(ast: BinaryExpressionAST) {
-        ast.left!!.accept(this)
+        ast.left.accept(this)
         val left = valueRefStack.pop()
-        ast.right!!.accept(this)
+        ast.right.accept(this)
         val right = valueRefStack.pop()
-        val pushing: LLVMValueRef?
-        pushing = when (ast.operation) {
+        val pushing = when (ast.operation) {
             '+' -> LLVMBuildFAdd(builder, left, right, "addtmp")
             '-' -> LLVMBuildFSub(builder, left, right, "subtmp")
             '*' -> LLVMBuildFMul(builder, left, right, "multmp")
@@ -35,8 +34,7 @@ class CodeGenASTVisitor : ASTVisitor() {
                 LLVMBuildUIToFP(builder, value, LLVMDoubleType(), "booltmp")
             }
             else -> {
-                System.err.println("unknown operation")
-                null
+                throw Exception("unknown operation")
             }
         }
         valueRefStack.push(pushing)
@@ -44,49 +42,41 @@ class CodeGenASTVisitor : ASTVisitor() {
 
     override fun visit(ast: FunctionCallAST) {
         val func = LLVMGetNamedFunction(module, ast.functionName)
-        if (func.isNull) {
-            System.err.println("unknown function")
-            return
-        }
-
-        if (LLVMCountParams(func) != ast.params!!.size) {
+        if (LLVMCountParams(func) != ast.params.size) {
             System.err.println("unmatched number of params")
             return
         }
 
-        val args = arrayOfNulls<LLVMValueRef>(Math.max(1, ast.params!!.size))
-        for (i in 0 until ast.params!!.size) {
-            ast.params!![i].accept(this)
+        val args = Array<LLVMValueRef>(Math.max(1, ast.params.size)) {
+            ast.params[it].accept(this)
             val value = valueRefStack.pop()
-            args[i] = value
+            value
         }
 
-        valueRefStack.push(LLVMBuildCall(builder, func, PointerPointer(*args), ast.params!!.size, "calltmp"))
+        valueRefStack.push(LLVMBuildCall(builder, func, PointerPointer(*args), ast.params.size, "calltmp"))
     }
 
     override fun visit(ast: FunctionDefinitionAST) {
-        // this is a prototype
-        ast.prototype!!.accept(this)
-        val prototype = valueRefStack.pop()
-        LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(prototype, "entry"))
-        ast.body!!.accept(this)
+        namedValues.clear()
+        ast.prototype.accept(this)
+        val function = valueRefStack.pop()
+        LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlock(function, "entry"))
+        ast.body.accept(this)
         val body = valueRefStack.pop()
         LLVMBuildRet(builder, body)
-        LLVMVerifyFunction(prototype, LLVMPrintMessageAction)
-        valueRefStack.push(prototype)
+        LLVMVerifyFunction(function, LLVMPrintMessageAction)
+        valueRefStack.push(function)
     }
 
     override fun visit(ast: FunctionPrototypeAST) {
-        val doubles = arrayOfNulls<LLVMTypeRef>(ast.params!!.size)
-        for (i in 0 until ast.params!!.size) {
-            doubles[i] = LLVMDoubleType()
-        }
-        val functionType = LLVMFunctionType(LLVMDoubleType(), PointerPointer(*doubles), ast.params!!.size, 0)
+        val size = ast.params.size
+        val doubles = Array<LLVMTypeRef>(size) { LLVMDoubleType() }
+        val functionType = LLVMFunctionType(LLVMDoubleType(), PointerPointer(*doubles), size, 0)
         val function = LLVMAddFunction(module, ast.functionName, functionType)
         LLVMSetLinkage(function, LLVMExternalLinkage)
 
-        for (i in 0 until ast.params!!.size) {
-            val argName = ast.params!![i]
+        for (i in 0 until size) {
+            val argName = ast.params[i]
             val param = LLVMGetParam(function, i)
             LLVMSetValueName(param, argName)
             namedValues[argName] = param
@@ -100,6 +90,6 @@ class CodeGenASTVisitor : ASTVisitor() {
     }
 
     override fun visit(ast: VariableAST) {
-        valueRefStack.push(namedValues.getOrDefault(ast.variableName, null))
+        valueRefStack.push(namedValues[ast.variableName])
     }
 }

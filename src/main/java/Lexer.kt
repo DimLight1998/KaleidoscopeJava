@@ -41,7 +41,7 @@ class Lexer(preserveComments: Boolean) {
                 }
 
                 val s = stringBuilder.toString()
-                if (this.keywords.keys.contains(s)) {
+                if (s in this.keywords.keys) {
                     ret.add(Token(this.keywords[s]!!, s))
                 } else {
                     ret.add(Token(TokenType.IDENTIFIER, s))
