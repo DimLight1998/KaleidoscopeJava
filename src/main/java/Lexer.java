@@ -1,17 +1,19 @@
 import java.util.*;
 
 class Lexer {
-    private enum TokenType {
-        EOF, DEF, EXTERN, IDENTIFIER, COMMENT, NUMBER, OTHER
+    enum TokenType {
+        EOF, DEF, EXTERN, IDENTIFIER, COMMENT, NUMBER, SEMICOLON, OTHER
     }
 
     private Map<String, TokenType> keywords;
+    private boolean preserveComments = false;
 
-    Lexer() {
+    Lexer(boolean preserveComments) {
         // initialize keywords
         this.keywords = new HashMap<>();
         this.keywords.put("def", TokenType.DEF);
         this.keywords.put("extern", TokenType.EXTERN);
+        this.preserveComments = preserveComments;
     }
 
     class Token {
@@ -69,7 +71,12 @@ class Lexer {
                     stringBuilder.append(sourceText.charAt(pos));
                     pos++;
                 }
-                ret.add(new Token(TokenType.COMMENT, stringBuilder.toString()));
+                if (preserveComments) {
+                    ret.add(new Token(TokenType.COMMENT, stringBuilder.toString()));
+                }
+            } else if (sourceText.charAt(pos) == ';') {
+                ret.add(new Token(TokenType.SEMICOLON, ";"));
+                pos++;
             } else {
                 ret.add(new Token(TokenType.OTHER, String.valueOf(sourceText.charAt(pos))));
                 pos++;

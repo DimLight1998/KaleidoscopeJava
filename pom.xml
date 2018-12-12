@@ -8,5 +8,7 @@
     <artifactId>KaleidoscopeJava</artifactId>
     <version>1.0-SNAPSHOT</version>
 
-
+    <properties>
+        <exec.mainClass>Main</exec.mainClass>
+    </properties>
 </project>
