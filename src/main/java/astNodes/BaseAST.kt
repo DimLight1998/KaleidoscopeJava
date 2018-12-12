@@ -1,4 +1,4 @@
-package ASTNodes
+package astNodes
 
 open class BaseAST {
     open fun accept(visitor: ASTVisitor) {

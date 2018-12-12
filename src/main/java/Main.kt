@@ -1,5 +1,3 @@
-import ASTNodes.BaseAST
-
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -12,13 +10,13 @@ object Main {
         val parser = Parser()
         try {
             val content = String(Files.readAllBytes(Paths.get("misc/test.k")), StandardCharsets.US_ASCII)
-            val list = lexer.GetTokens(content)
+            val list = lexer.getTokens(content)
             val rets = parser.parse(list)
             val visitor = CodeGenASTVisitor()
             for (ret in rets) {
                 ret.accept(visitor)
             }
-            visitor.Dump()
+            visitor.dump()
         } catch (e: IOException) {
             System.err.println("IO exception!")
         }

@@ -1,21 +1,20 @@
-import ASTNodes.*
+import astNodes.*
 
 import java.util.ArrayList
 import java.util.HashMap
 
 class Parser {
-    private val binOpPrecedence: HashMap<Char, Int>
+    private val binOpPrecedence: MutableMap<Char, Int> = HashMap()
     private var progress = 0
     private var tokens: List<Lexer.Token>? = null
 
     private fun getPrecedence(op: Char): Int {
-        val ret = (binOpPrecedence as java.util.Map<Char, Int>).getOrDefault(op, -1)
+        val ret = binOpPrecedence.getOrDefault(op, -1)
         return if (ret > 0) ret else -1
     }
 
     init {
         // build precedence table
-        binOpPrecedence = HashMap()
         binOpPrecedence['<'] = 10
         binOpPrecedence['+'] = 20
         binOpPrecedence['-'] = 20
@@ -30,10 +29,10 @@ class Parser {
         while (progress < tokens.size) {
             when (tokens[progress].tokenType) {
                 Lexer.TokenType.EOF -> return ret
-                Lexer.TokenType.DEF -> ret.add(parseFunctionDef())
-                Lexer.TokenType.EXTERN -> ret.add(parseExtern())
+                Lexer.TokenType.DEF -> ret.add(parseFunctionDef()!!)
+                Lexer.TokenType.EXTERN -> ret.add(parseExtern()!!)
                 Lexer.TokenType.SEMICOLON -> progress++
-                else -> ret.add(parseTopLevelExpr())
+                else -> ret.add(parseTopLevelExpr()!!)
             }
         }
         System.err.println("WARN: no EOF")
@@ -42,14 +41,14 @@ class Parser {
 
     private fun parseNumber(): BaseAST? {
         val curr = tokens!![progress]
-        if (curr.tokenType == Lexer.TokenType.NUMBER) {
+        return if (curr.tokenType == Lexer.TokenType.NUMBER) {
             val value = java.lang.Double.valueOf(curr.text)
             val ret = NumberAST(value)
             progress++
-            return ret
+            ret
         } else {
             System.err.println("expect number, got " + curr.text)
-            return null
+            null
         }
     }
 
@@ -86,7 +85,7 @@ class Parser {
                 val args = ArrayList<BaseAST>()
                 while (true) {
                     val arg = parseExpression()
-                    args.add(arg)
+                    args.add(arg!!)
 
                     if (tokens!![progress].tokenType == Lexer.TokenType.OTHER && tokens!![progress].text == ")") {
                         progress++
@@ -128,28 +127,28 @@ class Parser {
     }
 
     private fun parseBinOpRhs(minPrecedence: Int, lhs: BaseAST): BaseAST? {
-        var lhs = lhs
+        var lhs1 = lhs
         while (true) {
             // end of token stream, return lhs
-            if (progress == tokens!!.size) return lhs
+            if (progress == tokens!!.size) return lhs1
             var curr: Lexer.Token = tokens!![progress]
-            if (curr.tokenType != Lexer.TokenType.OTHER) return lhs
+            if (curr.tokenType != Lexer.TokenType.OTHER) return lhs1
 
             // now this is a operator (should be)
             val operation = curr.text[0]
             val precedence = getPrecedence(operation)
-            if (precedence < minPrecedence) return lhs
+            if (precedence < minPrecedence) return lhs1
             progress++
             var rhs: BaseAST? = parsePrimary() ?: return null
             curr = tokens!![progress]
             val nextOperation = curr.text[0]
             val nextPrecedence = getPrecedence(nextOperation)
             if (precedence < nextPrecedence) {
-                rhs = parseBinOpRhs(precedence + 1, rhs)
+                rhs = parseBinOpRhs(precedence + 1, rhs!!)
                 if (rhs == null) return null
             }
 
-            lhs = BinaryExpressionAST(lhs, rhs, operation)
+            lhs1 = BinaryExpressionAST(lhs1, rhs, operation)
         }
     }
 

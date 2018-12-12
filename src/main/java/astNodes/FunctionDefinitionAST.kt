@@ -1,4 +1,4 @@
-package ASTNodes
+package astNodes
 
 class FunctionDefinitionAST(var prototype: FunctionPrototypeAST?, var body: BaseAST?) : BaseAST() {
 

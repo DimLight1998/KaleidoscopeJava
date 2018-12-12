@@ -1,4 +1,4 @@
-package ASTNodes
+package astNodes
 
 class FunctionCallAST(var functionName: String?, var params: List<BaseAST>?) : BaseAST() {
 

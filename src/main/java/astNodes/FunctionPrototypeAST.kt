@@ -1,4 +1,4 @@
-package ASTNodes
+package astNodes
 
 class FunctionPrototypeAST(var functionName: String?, var params: List<String>?) : BaseAST() {
 

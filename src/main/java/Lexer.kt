@@ -1,11 +1,11 @@
 import java.util.*
 
-internal class Lexer(preserveComments: Boolean) {
+class Lexer(preserveComments: Boolean) {
 
     private val keywords: MutableMap<String, TokenType>
-    private val preserveComments = false
+    private var preserveComments = false
 
-    internal enum class TokenType {
+    enum class TokenType {
         EOF, DEF, EXTERN, IDENTIFIER, COMMENT, NUMBER, SEMICOLON, OTHER
     }
 
@@ -17,9 +17,9 @@ internal class Lexer(preserveComments: Boolean) {
         this.preserveComments = preserveComments
     }
 
-    internal inner class Token(var tokenType: TokenType, var text: String)
+    class Token(var tokenType: TokenType, var text: String)
 
-    fun GetTokens(sourceText: String): List<Token> {
+    fun getTokens(sourceText: String): List<Token> {
         var pos = 0
         val ret = ArrayList<Token>()
 
@@ -42,7 +42,7 @@ internal class Lexer(preserveComments: Boolean) {
 
                 val s = stringBuilder.toString()
                 if (this.keywords.keys.contains(s)) {
-                    ret.add(Token(this.keywords[s], s))
+                    ret.add(Token(this.keywords[s]!!, s))
                 } else {
                     ret.add(Token(TokenType.IDENTIFIER, s))
                 }

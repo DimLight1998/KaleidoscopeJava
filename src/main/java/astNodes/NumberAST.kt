@@ -1,6 +1,6 @@
-package ASTNodes
+package astNodes
 
-class VariableAST(var variableName: String?) : BaseAST() {
+class NumberAST(var value: Double) : BaseAST() {
 
     override fun accept(visitor: ASTVisitor) {
         visitor.visit(this)

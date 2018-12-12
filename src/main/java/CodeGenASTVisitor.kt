@@ -1,4 +1,4 @@
-import ASTNodes.*
+import astNodes.*
 
 import org.bytedeco.javacpp.LLVM.*
 
@@ -16,7 +16,7 @@ class CodeGenASTVisitor : ASTVisitor() {
 
     }
 
-    fun Dump() {
+    fun dump() {
         LLVMDumpModule(module)
     }
 
@@ -24,17 +24,17 @@ class CodeGenASTVisitor : ASTVisitor() {
         val right = valueRefStack.pop()
         val left = valueRefStack.pop()
         val pushing: LLVMValueRef?
-        when (ast.operation) {
-            '+' -> pushing = LLVMBuildFAdd(builder, left, right, "addtmp")
-            '-' -> pushing = LLVMBuildFSub(builder, left, right, "subtmp")
-            '*' -> pushing = LLVMBuildFMul(builder, left, right, "multmp")
+        pushing = when (ast.operation) {
+            '+' -> LLVMBuildFAdd(builder, left, right, "addtmp")
+            '-' -> LLVMBuildFSub(builder, left, right, "subtmp")
+            '*' -> LLVMBuildFMul(builder, left, right, "multmp")
             '<' -> {
                 val value = LLVMBuildFCmp(builder, LLVMRealULT, left, right, "cmptmp")
-                pushing = LLVMBuildUIToFP(builder, value, LLVMDoubleType(), "booltmp")
+                LLVMBuildUIToFP(builder, value, LLVMDoubleType(), "booltmp")
             }
             else -> {
                 System.err.println("unknown operation")
-                pushing = null
+                null
             }
         }
         valueRefStack.push(pushing)
@@ -96,6 +96,6 @@ class CodeGenASTVisitor : ASTVisitor() {
     }
 
     override fun visit(ast: VariableAST) {
-        valueRefStack.push((namedValues as java.util.Map<String, LLVMValueRef>).getOrDefault(ast.variableName, null))
+        valueRefStack.push(namedValues.getOrDefault(ast.variableName, null))
     }
 }
