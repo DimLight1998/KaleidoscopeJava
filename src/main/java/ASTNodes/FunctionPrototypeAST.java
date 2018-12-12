@@ -1,12 +1,12 @@
-package AstNodes;
+package ASTNodes;
 
 import java.util.List;
 
-public class FunctionProtoAst extends BaseAst {
+public class FunctionPrototypeAST extends BaseAST {
     private String functionName;
     private List<String> params;
 
-    public FunctionProtoAst(String functionName, List<String> params) {
+    public FunctionPrototypeAST(String functionName, List<String> params) {
         this.functionName = functionName;
         this.params = params;
     }
@@ -28,7 +28,7 @@ public class FunctionProtoAst extends BaseAst {
     }
 
     @Override
-    public void accept(AstVisitor visitor) {
+    public void accept(ASTVisitor visitor) {
         visitor.visit(this);
     }
 }

@@ -1,10 +1,10 @@
-package AstNodes;
+package ASTNodes;
 
 import java.util.List;
 
-public class FunctionCallAst extends BaseAst {
+public class FunctionCallAST extends BaseAST {
     private String functionName;
-    private List<BaseAst> params;
+    private List<BaseAST> params;
 
     public String getFunctionName() {
         return functionName;
@@ -14,22 +14,22 @@ public class FunctionCallAst extends BaseAst {
         this.functionName = functionName;
     }
 
-    public List<BaseAst> getParams() {
+    public List<BaseAST> getParams() {
         return params;
     }
 
-    public void setParams(List<BaseAst> params) {
+    public void setParams(List<BaseAST> params) {
         this.params = params;
     }
 
-    public FunctionCallAst(String functionName, List<BaseAst> params) {
+    public FunctionCallAST(String functionName, List<BaseAST> params) {
         this.functionName = functionName;
         this.params = params;
     }
 
     @Override
-    public void accept(AstVisitor visitor) {
-        for (BaseAst ast : params) {
+    public void accept(ASTVisitor visitor) {
+        for (BaseAST ast : params) {
             ast.accept(visitor);
         }
         visitor.visit(this);

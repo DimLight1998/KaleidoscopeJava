@@ -1,9 +1,9 @@
-package AstNodes;
+package ASTNodes;
 
-public class VariableAst extends BaseAst {
+public class VariableAST extends BaseAST {
     private String variableName;
 
-    public VariableAst(String variableName) {
+    public VariableAST(String variableName) {
         this.variableName = variableName;
     }
 
@@ -16,7 +16,7 @@ public class VariableAst extends BaseAst {
     }
 
     @Override
-    public void accept(AstVisitor visitor) {
+    public void accept(ASTVisitor visitor) {
         visitor.visit(this);
     }
 }

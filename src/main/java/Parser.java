@@ -1,5 +1,4 @@
-import AstNodes.*;
-import sun.awt.X11.ToplevelStateListener;
+import ASTNodes.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,8 +24,8 @@ public class Parser {
         binOpPrecedence.put('*', 40);
     }
 
-    public List<BaseAst> parse(List<Lexer.Token> tokens) {
-        ArrayList<BaseAst> ret = new ArrayList<>();
+    public List<BaseAST> parse(List<Lexer.Token> tokens) {
+        ArrayList<BaseAST> ret = new ArrayList<>();
         this.tokens = tokens;
         progress = 0;
 
@@ -52,11 +51,11 @@ public class Parser {
         return ret;
     }
 
-    private BaseAst parseNumber() {
+    private BaseAST parseNumber() {
         Lexer.Token curr = tokens.get(progress);
         if (curr.tokenType == Lexer.TokenType.NUMBER) {
             double value = Double.valueOf(curr.text);
-            NumberAst ret = new NumberAst(value);
+            NumberAST ret = new NumberAST(value);
             progress++;
             return ret;
         } else {
@@ -65,14 +64,14 @@ public class Parser {
         }
     }
 
-    private BaseAst parseParen() {
+    private BaseAST parseParen() {
         Lexer.Token curr = tokens.get(progress);
         if (!(curr.tokenType == Lexer.TokenType.OTHER && curr.text.equals("("))) {
             System.err.println("expect '(', got " + curr.text);
         }
         progress++;
 
-        BaseAst ret = parseExpression();
+        BaseAST ret = parseExpression();
 
         curr = tokens.get(progress);
         if (!(curr.tokenType == Lexer.TokenType.OTHER && curr.text.equals(")"))) {
@@ -82,7 +81,7 @@ public class Parser {
         return ret;
     }
 
-    private BaseAst parseIdentifier() {
+    private BaseAST parseIdentifier() {
         Lexer.Token curr = tokens.get(progress);
         if (curr.tokenType != Lexer.TokenType.IDENTIFIER) {
             System.err.println("expect an identifier, got " + curr.text);
@@ -95,15 +94,15 @@ public class Parser {
             if (peek.tokenType == Lexer.TokenType.OTHER && peek.text.equals("(")) {
                 // should be a function call
                 progress += 2;
-                List<BaseAst> args = new ArrayList<>();
+                List<BaseAST> args = new ArrayList<>();
                 while (true) {
-                    BaseAst arg = parseExpression();
+                    BaseAST arg = parseExpression();
                     args.add(arg);
 
                     if (tokens.get(progress).tokenType == Lexer.TokenType.OTHER &&
                             tokens.get(progress).text.equals(")")) {
                         progress++;
-                        return new FunctionCallAst(curr.text, args);
+                        return new FunctionCallAST(curr.text, args);
                     }
 
                     if (tokens.get(progress).tokenType != Lexer.TokenType.OTHER ||
@@ -120,10 +119,10 @@ public class Parser {
 
         // otherwise it's just a variable
         progress++;
-        return new VariableAst(curr.text);
+        return new VariableAST(curr.text);
     }
 
-    private BaseAst parsePrimary() {
+    private BaseAST parsePrimary() {
         Lexer.Token curr = tokens.get(progress);
         switch (curr.tokenType) {
             case IDENTIFIER:
@@ -139,7 +138,7 @@ public class Parser {
         }
     }
 
-    private BaseAst parseBinOpRhs(int minPrecedence, BaseAst lhs) {
+    private BaseAST parseBinOpRhs(int minPrecedence, BaseAST lhs) {
         while (true) {
             // end of token stream, return lhs
             if (progress == tokens.size()) return lhs;
@@ -151,7 +150,7 @@ public class Parser {
             int precedence = getPrecedence(operation);
             if (precedence < minPrecedence) return lhs;
             progress++;
-            BaseAst rhs = parsePrimary();
+            BaseAST rhs = parsePrimary();
             if (rhs == null) return null;
             curr = tokens.get(progress);
             char nextOperation = curr.text.charAt(0);
@@ -161,17 +160,17 @@ public class Parser {
                 if (rhs == null) return null;
             }
 
-            lhs = new BinaryExprAst(lhs, rhs, operation);
+            lhs = new BinaryExpressionAST(lhs, rhs, operation);
         }
     }
 
-    private BaseAst parseExpression() {
-        BaseAst lhs = parsePrimary();
+    private BaseAST parseExpression() {
+        BaseAST lhs = parsePrimary();
         if (lhs == null) return null;
         return parseBinOpRhs(0, lhs);
     }
 
-    private BaseAst parsePrototype() {
+    private BaseAST parsePrototype() {
         Lexer.Token curr = tokens.get(progress);
         if (curr.tokenType != Lexer.TokenType.IDENTIFIER) {
             System.err.println("expect an identifier, got " + curr.text);
@@ -199,31 +198,31 @@ public class Parser {
             System.err.println("expect ')', got " + curr.text);
         }
         progress++;
-        return new FunctionProtoAst(functionName, args);
+        return new FunctionPrototypeAST(functionName, args);
     }
 
-    private BaseAst parseFunctionDef() {
+    private BaseAST parseFunctionDef() {
         Lexer.Token curr = tokens.get(progress);
         if (curr.tokenType != Lexer.TokenType.DEF) {
             System.err.println("expect DEF, got " + curr.text);
             return null;
         }
         progress++;
-        BaseAst proto = parsePrototype();
-        if (proto == null) return null;
-        BaseAst expr = parseExpression();
+        BaseAST prototype = parsePrototype();
+        if (prototype == null) return null;
+        BaseAST expr = parseExpression();
         if (expr == null) return null;
-        return new FunctionDefAst((FunctionProtoAst) proto, expr);
+        return new FunctionDefinitionAST((FunctionPrototypeAST) prototype, expr);
     }
 
-    private BaseAst parseTopLevelExpr() {
-        BaseAst expr = parseExpression();
+    private BaseAST parseTopLevelExpr() {
+        BaseAST expr = parseExpression();
         if (expr == null) return null;
-        FunctionProtoAst proto = new FunctionProtoAst("__anonymous__", new ArrayList<>());
-        return new FunctionDefAst(proto, expr);
+        FunctionPrototypeAST prototype = new FunctionPrototypeAST("__anonymous__", new ArrayList<>());
+        return new FunctionDefinitionAST(prototype, expr);
     }
 
-    private BaseAst parseExtern() {
+    private BaseAST parseExtern() {
         Lexer.Token curr = tokens.get(progress);
         if (curr.tokenType != Lexer.TokenType.EXTERN) {
             System.err.println("expect EXTERN, got " + curr.text);

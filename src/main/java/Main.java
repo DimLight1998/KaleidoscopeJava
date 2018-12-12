@@ -1,7 +1,5 @@
-import AstNodes.BaseAst;
+import ASTNodes.BaseAST;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -15,9 +13,9 @@ public class Main {
         try {
             String content = new String(Files.readAllBytes(Paths.get("misc/test.k")), StandardCharsets.US_ASCII);
             List<Lexer.Token> list = lexer.GetTokens(content);
-            List<BaseAst> rets = parser.parse(list);
-            CodeGenAstVisitor visitor = new CodeGenAstVisitor();
-            for (BaseAst ret : rets) {
+            List<BaseAST> rets = parser.parse(list);
+            CodeGenASTVisitor visitor = new CodeGenASTVisitor();
+            for (BaseAST ret : rets) {
                 ret.accept(visitor);
             }
             visitor.Dump();

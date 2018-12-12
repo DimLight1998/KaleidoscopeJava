@@ -1,29 +1,29 @@
-package AstNodes;
+package ASTNodes;
 
-public class BinaryExprAst extends BaseAst {
-    private BaseAst left;
-    private BaseAst right;
+public class BinaryExpressionAST extends BaseAST {
+    private BaseAST left;
+    private BaseAST right;
     private char operation;
 
-    public BinaryExprAst(BaseAst left, BaseAst right, char operation) {
+    public BinaryExpressionAST(BaseAST left, BaseAST right, char operation) {
         this.left = left;
         this.right = right;
         this.operation = operation;
     }
 
-    public BaseAst getLeft() {
+    public BaseAST getLeft() {
         return left;
     }
 
-    public void setLeft(BaseAst left) {
+    public void setLeft(BaseAST left) {
         this.left = left;
     }
 
-    public BaseAst getRight() {
+    public BaseAST getRight() {
         return right;
     }
 
-    public void setRight(BaseAst right) {
+    public void setRight(BaseAST right) {
         this.right = right;
     }
 
@@ -36,7 +36,7 @@ public class BinaryExprAst extends BaseAst {
     }
 
     @Override
-    public void accept(AstVisitor visitor) {
+    public void accept(ASTVisitor visitor) {
         left.accept(visitor);
         right.accept(visitor);
         visitor.visit(this);

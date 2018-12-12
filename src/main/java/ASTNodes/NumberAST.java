@@ -1,6 +1,6 @@
-package AstNodes;
+package ASTNodes;
 
-public class NumberAst  extends BaseAst{
+public class NumberAST extends BaseAST {
     private double value;
 
     public double getValue() {
@@ -11,12 +11,12 @@ public class NumberAst  extends BaseAst{
         this.value = value;
     }
 
-    public NumberAst(double value) {
+    public NumberAST(double value) {
         this.value = value;
     }
 
     @Override
-    public void accept(AstVisitor visitor) {
+    public void accept(ASTVisitor visitor) {
         visitor.visit(this);
     }
 }
