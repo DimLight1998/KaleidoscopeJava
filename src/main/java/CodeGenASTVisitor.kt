@@ -102,7 +102,7 @@ class CodeGenASTVisitor : ASTVisitor() {
 
         var positiveBB = LLVMAppendBasicBlock(function, "then")
         var negativeBB = LLVMAppendBasicBlock(function, "else")
-        val mergeBB = LLVMAppendBasicBlock(function, "ifcont")
+        val mergeBB = LLVMAppendBasicBlock(function, "if_cont")
         LLVMBuildCondBr(builder, condition, positiveBB, negativeBB)
 
         LLVMPositionBuilderAtEnd(builder, positiveBB)
@@ -132,5 +132,50 @@ class CodeGenASTVisitor : ASTVisitor() {
                 1
         )
         valueRefStack.push(phi)
+    }
+
+    override fun visit(ast: ForExpressionAST) {
+        ast.start.accept(this)
+        val startValue = valueRefStack.pop()
+        val preHeaderBB = LLVMGetInsertBlock(builder)
+        val function = LLVMGetBasicBlockParent(preHeaderBB)
+        val loopBB = LLVMAppendBasicBlock(function, "loop")
+        LLVMBuildBr(builder, loopBB)
+        LLVMPositionBuilderAtEnd(builder, loopBB)
+        val variable = LLVMBuildPhi(builder, LLVMDoubleType(), ast.varName)
+        LLVMAddIncoming(
+                variable,
+                PointerPointer(*Array<LLVMValueRef>(1) { startValue }),
+                PointerPointer(*Array<LLVMBasicBlockRef>(1) { preHeaderBB }),
+                1
+        )
+        var oldVal: LLVMValueRef? = null
+        if (ast.varName in namedValues.keys) {
+            oldVal = namedValues[ast.varName]!!
+        }
+        namedValues[ast.varName] = variable
+        ast.body.accept(this)
+        valueRefStack.pop()
+        ast.step.accept(this)
+        val stepVal = valueRefStack.pop()
+        val nextValue = LLVMBuildFAdd(builder, variable, stepVal, "next_var")
+        ast.end.accept(this)
+        val zero = LLVMConstReal(LLVMDoubleType(), 0.0)
+        val endCond = LLVMBuildFCmp(builder, LLVMRealONE, valueRefStack.pop(), zero, "loop_end")
+        val loopEndBB = LLVMGetInsertBlock(builder)
+        val afterBB = LLVMAppendBasicBlock(function, "after_loop")
+        LLVMBuildCondBr(builder, endCond, loopBB, afterBB)
+        LLVMPositionBuilderAtEnd(builder, afterBB)
+        LLVMAddIncoming(
+                variable,
+                PointerPointer(*Array<LLVMValueRef>(1) { nextValue }),
+                PointerPointer(*Array<LLVMBasicBlockRef>(1) { loopEndBB }),
+                1
+        )
+        namedValues.remove(ast.varName)
+        if (oldVal != null) {
+            namedValues[ast.varName] = oldVal
+        }
+        valueRefStack.push(LLVMConstReal(LLVMDoubleType(), 0.0))
     }
 }

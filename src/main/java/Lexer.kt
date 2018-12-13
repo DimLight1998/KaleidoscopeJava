@@ -7,7 +7,7 @@ class Lexer(preserveComments: Boolean) {
 
     enum class TokenType {
         EOF, DEF, EXTERN, IDENTIFIER, COMMENT, NUMBER, SEMICOLON, OTHER,
-        IF, THEN, ELSE
+        IF, THEN, ELSE, FOR, IN
     }
 
     init {
@@ -17,7 +17,9 @@ class Lexer(preserveComments: Boolean) {
                 "extern" to TokenType.EXTERN,
                 "if" to TokenType.IF,
                 "then" to TokenType.THEN,
-                "else" to TokenType.ELSE
+                "else" to TokenType.ELSE,
+                "for" to TokenType.FOR,
+                "in" to TokenType.IN
         )
         this.preserveComments = preserveComments
     }

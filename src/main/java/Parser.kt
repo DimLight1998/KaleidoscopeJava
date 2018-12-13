@@ -6,7 +6,7 @@ import java.util.HashMap
 class Parser {
     private val binOpPrecedence: MutableMap<Char, Int> = HashMap()
     private var progress = 0
-    private lateinit var tokens: List<Lexer.Token>;
+    private lateinit var tokens: List<Lexer.Token>
 
     private fun getPrecedence(op: Char): Int {
         val ret = binOpPrecedence.getOrDefault(op, -1)
@@ -111,6 +111,7 @@ class Parser {
             Lexer.TokenType.IDENTIFIER -> return parseIdentifier()
             Lexer.TokenType.NUMBER -> return parseNumber()
             Lexer.TokenType.IF -> return parseIfExpr()
+            Lexer.TokenType.FOR -> return parseForExpr()
             Lexer.TokenType.OTHER -> {
                 if (curr.text == "(") return parseParen()
                 throw Exception("expect a primary, got " + curr.text)
@@ -209,7 +210,7 @@ class Parser {
     }
 
     private fun parseIfExpr(): BaseAST {
-        progress++;
+        progress++
         val condition = parseExpression()
         if (tokens[progress].tokenType != Lexer.TokenType.THEN) {
             throw Exception("expect then, got " + tokens[progress].text)
@@ -222,5 +223,44 @@ class Parser {
         progress++
         val negative = parseExpression()
         return IfExpressionAST(condition, positive, negative)
+    }
+
+    private fun parseForExpr(): BaseAST {
+        progress++
+        var curr = tokens[progress]
+        if (curr.tokenType != Lexer.TokenType.IDENTIFIER) {
+            throw Exception("expect an identifier, got " + curr.text)
+        }
+        val varName = curr.text
+        progress++
+        curr = tokens[progress]
+        if (curr.tokenType != Lexer.TokenType.OTHER || curr.text[0] != '=') {
+            throw Exception("expect '=', got " + curr.text)
+        }
+        progress++
+
+        val start = parseExpression()
+        curr = tokens[progress]
+        if (curr.tokenType != Lexer.TokenType.OTHER || curr.text[0] != ',') {
+            throw Exception("expect ',', got " + curr.text)
+        }
+        progress++
+
+        val end = parseExpression()
+        curr = tokens[progress]
+        if (curr.tokenType != Lexer.TokenType.OTHER || curr.text[0] != ',') {
+            throw Exception("expect ',', got " + curr.text)
+        }
+        progress++
+
+        val step = parseExpression()
+        curr = tokens[progress]
+        if (curr.tokenType != Lexer.TokenType.IN) {
+            throw Exception("expect keyword `in`, got " + curr.text)
+        }
+        progress++
+
+        val body = parseExpression()
+        return ForExpressionAST(varName, start, end, step, body)
     }
 }
